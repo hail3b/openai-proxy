@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
-const config = {
+const nextConfig = {
+  output: 'standalone',
+  experimental: {
+    appDir: true,
+  },
   async rewrites() {
     return [
       {
@@ -10,4 +14,4 @@ const config = {
   },
 };
 
-export default config;
+export default nextConfig;
