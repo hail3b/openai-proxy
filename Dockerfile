@@ -1,16 +1,19 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install build dependencies
+RUN apk add --no-cache libc6-compat python3 make g++
+
 # Install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@8.9.0
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies with specific network timeout and retry settings
+RUN pnpm install --frozen-lockfile --network-timeout 100000 --retry 3
 
 # Copy source code
 COPY . .
@@ -28,7 +31,8 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Install production only dependencies
-RUN npm install -g pnpm
+RUN apk add --no-cache libc6-compat && \
+    npm install -g pnpm@8.9.0
 
 # Copy necessary files from builder
 COPY --from=builder --chown=nextjs:nodejs /app/package.json .
@@ -36,8 +40,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/pnpm-lock.yaml .
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Install production dependencies only
-RUN pnpm install --prod --frozen-lockfile
+# Install production dependencies only with specific network timeout and retry settings
+RUN pnpm install --prod --frozen-lockfile --network-timeout 100000 --retry 3
 
 # Set environment variables
 ENV NODE_ENV=production \
